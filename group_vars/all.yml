@@ -1,0 +1,13 @@
+---
+ansibleuser:
+  name: 'ansible'
+  group: 'ansible'
+  uid: 1000
+  gid: 1000
+  password: '{{ ansible_sudo_pass }}'
+  pubkeys:
+    - {key: '{{ ansibleuser_key }}'}
+
+ssh:
+  port: '{{ ssh_port }}'
+

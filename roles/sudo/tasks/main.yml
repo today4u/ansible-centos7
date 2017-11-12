@@ -1,0 +1,22 @@
+---
+- name: sudoers.dに専用ファイル追加
+  file:
+    path: /etc/sudoers.d/{{ ansibleuser.name }}
+    state: touch
+    owner: root
+    group: root
+    mode: 0440
+
+- name: sudoユーザー登録
+  lineinfile: 
+    dest: /etc/sudoers.d/{{ ansibleuser.name }}
+    line: "{{ ansibleuser.name }} ALL=(ALL) ALL"
+
+- name: suコマンドの昇格をwheelに限定
+  lineinfile:
+    dest: '/etc/pam.d/su'
+    state: present
+    backrefs: yes
+    regexp: '^#?\s*auth\s*required\s*pam_wheel.so use_uid'
+    line: "auth            required        pam_wheel.so use_uid"
+

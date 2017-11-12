@@ -1,0 +1,83 @@
+---
+# sshd 
+# ここではあえて、notify によるsshd restartはしない。
+- name: sshd_configバックアップ存在確認
+  stat: path="/etc/ssh/sshd_config.original"
+  register: result
+
+- name: sshd_configバックアップ
+  command: 'cp -p /etc/ssh/sshd_config /etc/ssh/sshd_config.original'
+  when: result.stat.exists == false
+
+- name: sshd_configの設定
+  lineinfile: 
+    dest: /etc/ssh/sshd_config
+    state: present
+    regexp: '{{ item.regexp }}'
+    insertafter: '{{ item.insertafter }}'
+    line: '{{ item.line }}'
+    backup: yes
+  with_items:
+    # ssh Port 変更
+    - regexp: '^#*\s*Port'
+      insertafter: '^#Port'
+      line: 'Port {{ ssh.port }}'
+
+#    # SSHプロトコル2に限定する
+#    - regexp: '^#*\s*Protocol'
+#      insertafter: '^#Protocol'
+#      line: 'Protocol 2'
+
+    # rootによる直接ログインを抑制 
+    - regexp: '^#*\s*PermitRootLogin'
+      insertafter: '^#PermitRootLogin'
+      line: 'PermitRootLogin no'
+
+    # パスワード認証を無効化
+    - regexp: '^#*\s*PasswordAuthentication\s(yes|no)'
+      insertafter: '^#PasswordAuthentication'
+      line: 'PasswordAuthentication no'
+
+    # 空のパスワード設定を禁止
+    - regexp: '^#*\s*PermitEmptyPasswords'
+      insertafter: '^#PermitEmptyPasswords'
+      line: 'PermitEmptyPasswords no'
+
+    # チャレンジレスポンス認証を無効化
+    - regexp: '^#*\s*ChallengeResponseAuthentication'
+      insertafter: '^#ChallengeResponseAuthentication'
+      line: 'ChallengeResponseAuthentication no'
+
+    # PAM を無効化
+    - regexp: '^UsePAM'
+      #insertafter: '^UsePAM'
+      insertafter: ''
+      line: 'UsePAM'
+
+    # GSSAPIAuthentication 無効化
+    - regexp: '^GSSAPIAuthentication'
+      insertafter: ''
+      line: 'GSSAPIAuthentication no'
+
+
+#    # ssh接続可能なユーザーを限定
+#    - regexp: '^#*\s*AllowUsers'
+#      insertafter: '^#AllowUsers'
+#      line: 'AllowUsers {{ ssh.allowusers }}'
+
+# - {port: "{{ ansible_port }}/tcp",   state: enabled,  permanent: true, immediate: true}  # ssh              
+# - {service: ssh,        state: disabled, permanent: true, immediate: false} # ssh        (22)   close
+- name: SSH用ポートを開ける
+  firewalld:
+    port: '{{ ssh.port }}/tcp'
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: デフォルトのSSH用22番ポートを閉じる
+  firewalld:
+    service: 'ssh'
+    permanent: true
+    state: disabled
+    immediate: false
+

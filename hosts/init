@@ -1,0 +1,11 @@
+[server]
+xxx.xxx.xxx.xxx
+
+[all:vars]
+ansible_port=22
+ansible_user=root
+ansible_sudo_pass=sudoPassword
+
+ansibleuser_key='https://github.com/example.keys'
+ssh_port=22222
+

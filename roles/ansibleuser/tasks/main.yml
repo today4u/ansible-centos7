@@ -1,0 +1,23 @@
+---
+- name: 管理用グループ追加
+  group:
+    name: '{{ ansibleuser.group }}'
+    gid: '{{ ansibleuser.gid }}'
+
+- name: 管理用ユーザー追加
+  user:
+     name: '{{ ansibleuser.name }}'
+     uid: '{{ ansibleuser.uid }}'
+     password: '{{ ansibleuser.password |password_hash("sha512") }}'
+     group: '{{ ansibleuser.group }}'
+     groups: 'wheel'
+     state: present
+
+- name: 鍵設置
+  authorized_key:
+     user: '{{ ansibleuser.name }}'
+     state: present
+     key: '{{ item.key }}'
+  with_items: '{{ansibleuser.pubkeys}}'
+
+

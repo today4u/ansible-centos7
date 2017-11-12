@@ -1,0 +1,16 @@
+---
+- hosts: server
+  become: yes
+  become_user: root
+  vars_files:
+    - group_vars/all.yml
+  roles:
+    - ansibleuser
+    - sudo
+    - selinux
+    - ssh
+  tasks:
+    - name: 'First run (root only)'
+      shell: 'systemctl restart sshd.service && firewall-cmd --reload'
+      when: ansible_user == 'root'
+

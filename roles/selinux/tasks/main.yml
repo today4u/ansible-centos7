@@ -1,0 +1,6 @@
+---
+- name: SELinuxを無効化
+  selinux: state=disabled                    # 完全に無効化
+  #selinux: policy=targeted state=enforcing  # ポリシー違反をアクセス拒否＋ログ
+  #selinux: policy=targeted state=permissive # ポリシー違反をアクセス許可＋ログ
+
