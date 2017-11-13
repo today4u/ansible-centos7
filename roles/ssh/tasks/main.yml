@@ -48,11 +48,10 @@
       insertafter: '^#ChallengeResponseAuthentication'
       line: 'ChallengeResponseAuthentication no'
 
-    # PAM を無効化
-    - regexp: '^UsePAM'
-      #insertafter: '^UsePAM'
-      insertafter: ''
-      line: 'UsePAM'
+#    # PAM を無効化
+#    - regexp: '^UsePAM'
+#      insertafter: ''
+#      line: 'UsePAM'
 
     # GSSAPIAuthentication 無効化
     - regexp: '^GSSAPIAuthentication'
