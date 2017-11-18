@@ -6,6 +6,7 @@
     - group_vars/all.yml
   roles:
     - ansibleuser
+    - yum
     - sudo
     - selinux
     - ssh
