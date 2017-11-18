@@ -9,6 +9,7 @@
     - sudo
     - selinux
     - ssh
+    - repo
   tasks:
     - name: 'First run (root only)'
       shell: 'systemctl restart sshd.service && firewall-cmd --reload'

@@ -1,0 +1,27 @@
+---
+# repo
+- name: epel 追加
+  yum:
+    name: epel-release
+    state: present
+
+# remiの追加をyum モジュールで実行しても、初回実行時はリポジトリの追加はできたが、
+# 2回目以降の実行の際、失敗してしまい、冪等性を担保することができなかった。
+# やむなく"command"による追加を行なう。なるべくcommandの利用は避けたいので解決方法がわかれば修正する予定
+- name: Install remi repo.
+  yum:
+    name: "http://rpms.famillecollet.com/enterprise/remi-release-7.rpm"
+    state: present
+
+#- name: remi 追加
+#  command: rpm -ih http://rpms.famillecollet.com/enterprise/remi-release-7.rpm creates=/etc/yum.repos.d/remi.repo
+
+
+- name: enabledを全て0にする
+  replace:
+    dest: /etc/yum.repos.d/{{ item }}
+    regexp: "enabled *= *1"
+    replace: "enabled=0"
+  with_items:
+    - epel.repo
+    - remi.repo
