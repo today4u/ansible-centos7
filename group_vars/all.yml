@@ -8,6 +8,16 @@ ansibleuser:
   pubkeys:
     - {key: '{{ ansibleuser_key }}'}
 
+apache2:
+  document_root: '/var/www/html'
+  servername: 'www.example.com:80'
+  vhosts_conf_dir: '/etc/httpd/conf.d/vhosts'
+  vhosts:
+    - {name: undefined,   conf_file: undefined,        document_root: "/var/www/undefined"   }  #vhostを使うなら設置
+    - {name: example.com, conf_file: example.com.conf, document_root: "/var/www/example.com" }
+
+
+
 ssh:
   port: '{{ ssh_port }}'
 

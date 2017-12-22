@@ -1,0 +1,109 @@
+---
+- name: apache yumインストール
+  yum: name=httpd state=latest
+
+- name: mod_ssl yumインストール
+  yum: name=mod_ssl state=latest
+
+
+- name: httpd.confバックアップ存在確認
+  stat: path="/etc/httpd/conf/httpd.conf.original"
+  register: result
+
+- name: httpd.confバックアップ
+  command: 'cp -p /etc/httpd/conf/httpd.conf /etc/httpd/conf/httpd.conf.original'
+  when: result.stat.exists == false
+
+- name: "httpd.conf 編集"
+  lineinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    state: present
+    backup: yes
+    regexp: '{{ item.regexp }}'
+    insertafter: '{{ item.insertafter }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^#?\s*ServerTokens'
+      insertafter: '^ServerAdmin'
+      line: 'ServerTokens Prod'
+    - regexp: '^#?\s*ServerSignature'
+      insertafter: '^ServerAdmin'
+      line: 'ServerSignature Off'
+    - regexp: '^DocumentRoot '
+      insertafter: '^DocumentRoot '
+      line: 'DocumentRoot "/var/www/undefined"'
+  notify: httpd restart
+
+- name: vhost 初期値用設定ファイルinclude
+  lineinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    state: present
+    line: 'IncludeOptional conf.d/vhosts/undefined'
+  notify: httpd restart
+
+- name: vhost用設定ファイルinclude追記
+  lineinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    state: present
+    insertafter: '^IncludeOptional conf.d/vhosts/undefined'
+    line: 'IncludeOptional conf.d/vhosts/*.conf'
+  notify: httpd restart
+
+- name: undefined用ディレクトリ設置
+  file:
+    state: directory
+    path: /var/www/undefined
+    owner: root
+    group: root
+    mode: 0755
+
+- name: undefined用インデックス設置
+  copy:
+    dest: /var/www/undefined/index.php
+    src: undefined_index.php
+
+- name: virtualhost用confディレクトリ設置
+  file:
+    path: '{{ apache2.vhosts_conf_dir }}'
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: virtualhost用conf設置
+  copy:
+    src: '{{ item.conf_file }}'
+    dest: '{{ apache2.vhosts_conf_dir }}'
+    owner: root
+    group: root
+    mode: 644
+    backup: yes
+  with_items: '{{ apache2.vhosts }}'
+  notify: httpd restart
+
+- name: vhostsのDocumentRootで指定してあるディレクトリ設置
+  file:
+    path: '{{ item.document_root }}'
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  with_items: '{{ apache2.vhosts }}'
+
+- name: http,https用ポートを開ける
+  firewalld:
+    service: '{{ item.service }}'
+    permanent: true
+    state: disabled
+    immediate: false
+  with_items: 
+    - service: 'http'
+    - service: 'https'
+
+
+- name: Apache起動
+  service: 
+    name: httpd 
+    state: started 
+    enabled: yes
+

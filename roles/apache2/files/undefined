@@ -1,0 +1,10 @@
+<VirtualHost *:80>
+  ServerName   example.org
+  DocumentRoot /var/www/undefined
+  <Directory /var/www/undefined/>
+    AllowOverride All
+    Options FollowSymLinks
+    Order allow,deny
+    Allow from all
+   </Directory>
+</VirtualHost>
