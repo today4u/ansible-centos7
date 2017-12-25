@@ -1,0 +1,39 @@
+---
+# git
+- name: 'git install開始'
+  debug: msg="from include"
+
+- name: Gitのコンパイルで必要なものをインストール
+  yum: name="{{ item }}" state=present
+  with_items:
+     - gcc
+     - gcc-c++
+     - curl-devel
+     - expat-devel
+     - zlib-devel
+     - perl-ExtUtils-MakeMaker
+
+- name: Gitダウンロード
+  get_url: 
+    url: "https://www.kernel.org/pub/software/scm/git/git-{{ git.version }}.tar.gz"
+    dest: '{{ git.src_dir }}'
+  register: git_download
+
+- name: ダウンロード結果
+  debug: var=git_download
+
+- name: ダウンロードファイルを解答
+  unarchive: src='{{ git_download.dest }}' dest='{{ git.src_dir }}' copy=no
+
+- name: Git インストール
+  command: '{{ item }}'
+  with_items:
+    - "./configure --bindir={{ git.bin_dir }}"
+    - 'make'
+    - 'make install'
+#    - ./configure --bindir='{{ git.bin_dir }}'
+#    - make
+#    - make install
+  args:
+    chdir:   '{{ git.src_dir }}/git-{{ git.version }}'
+    creates: '{{ git.bin_dir }}/git'

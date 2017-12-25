@@ -1,0 +1,22 @@
+---
+#git
+- name: yumのgit削除
+  yum: name=git state=absent
+
+- name: Git version check and isExist
+  environment: 
+    PATH: "{{ git.bin_dir }}"
+  command: 'git --version'
+  ignore_errors: true
+  changed_when: false
+  register: result
+
+- name: debug
+  debug: var=result
+
+- name: Gitのインストールを行う場合include
+  include: git-install.yml
+  when: (result|failed) or
+        (result.stdout != 'git version {{ git.version }}')
+
+# プロジェクトをcloneする場合は以下に。
