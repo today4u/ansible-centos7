@@ -1,0 +1,58 @@
+---
+# PHP
+- name: PHPと関連パッケージインストール
+  yum: name={{ item }} enablerepo=epel,remi,remi-php70 state=present
+  with_items:
+    - libmcrypt
+    - php
+    - php-mcrypt
+    - php-mbstring
+    - php-mysqlnd
+    - php-gd
+    - php-pdo
+    - php-pear
+    - php-xmlrpc
+
+- name: php.iniバックアップ存在確認
+  stat: path="/etc/php.ini.original"
+  register: result
+
+- name: php.iniバックアップ
+  command: 'cp -p /etc/php.ini /etc/php.ini.original'
+  when: result.stat.exists == false
+
+- name: php.ini設定
+  lineinfile:
+    dest: /etc/php.ini
+    state: present
+#    backup: yes 
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    # 文字エンコーディング関連
+    - regexp: '^;?\s*output_buffering = '
+      line: 'output_buffering = Off'
+    - regexp: '^;?date.timezone'
+      line: 'date.timezone = "Asia/Tokyo"'
+    - regexp: '^;?mbstring.language ='
+      line: 'mbstring.language = Japanese'
+    - regexp: '^;?mbstring.internal_encoding ='
+      line: 'mbstring.internal_encoding = UTF-8'
+    - regexp: '^;?mbstring.http_input ='
+      line: 'mbstring.http_input = UTF-8'
+    - regexp: '^;?mbstring.http_input ='
+      line: 'mbstring.http_input = UTF-8'
+    - regexp: '^;?mbstring.http_output ='
+      line: 'mbstring.http_output = pass'
+    - regexp: '^;?mbstring.encoding_translation ='
+      line: 'mbstring.encoding_translation = On'
+    - regexp: '^;?mbstring.substitute_character ='
+      line: 'mbstring.substitute_character = "?"'
+    # PHPのバージョン情報をヘッダから削除 
+    - regexp: '^expose_php ='
+      line: 'expose_php = Off'
+    # セッションIDの生成をMD5からSHA-512アルゴリズムに変更
+    - regexp: '^session.hash_function ='
+      line: 'session.hash_function = sha512'
+
+
