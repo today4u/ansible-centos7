@@ -1,0 +1,7 @@
+---
+# Python
+- name: pipインストール
+  yum: name=python-pip enablerepo=epel state=present
+
+- name: pexpect
+  pip: name=pexpect
