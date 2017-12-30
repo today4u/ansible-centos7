@@ -1,0 +1,12 @@
+---
+- hosts: server
+  become: yes 
+  become_user: root
+  roles:
+    - repo
+    - apache2
+    - php 
+    - git 
+    - python
+#    - mailserver
+#    - cron
