@@ -16,6 +16,15 @@ apache2:
     - {name: undefined,   conf_file: undefined,        document_root: "/var/www/undefined"   }  #vhostを使うなら設置
     - {name: example.com, conf_file: example.com.conf, document_root: "/var/www/example.com" }
 
+database:
+  name: 'db_name'
+  root:
+    password: '{{ db_root_pass }}'
+  user:
+    name: 'db_user'
+    password: '{{ db_user_pass }}'
+    priv: 'db_name.*:ALL'
+
 git:
   version: '2.15.1'         #参照先 => https://www.kernel.org/pub/software/scm/git/
   src_dir: '/usr/local/src'

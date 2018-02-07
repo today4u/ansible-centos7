@@ -1,0 +1,27 @@
+---
+- name: root アカウントのパスワードを設定
+  mysql_user:
+    login_user: root
+    login_password: "{{ database.root.password }}"
+    name: root
+    host: localhost
+    password: "{{ database.root.password }}"
+    check_implicit_admin: yes
+
+- name: DBを作成
+  mysql_db:
+    login_user: root
+    login_password: "{{ database.root.password }}"
+    name: onbreeze
+    state: present
+
+- name: DBユーザー作成・権限の付与
+  mysql_user:
+    login_user: root
+    login_password: "{{ database.root.password }}"
+    name: "{{ database.user.name }}"
+    password: "{{ database.user.password }}"
+    priv: "{{ database.user.priv }}"
+    host: localhost
+    state: present
+
