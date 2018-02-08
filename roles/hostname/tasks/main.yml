@@ -1,0 +1,4 @@
+---
+- name: hostname変更
+  command: 'hostnamectl set-hostname {{ hostname.sethostname }}'
+

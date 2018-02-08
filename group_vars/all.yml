@@ -30,7 +30,8 @@ git:
   src_dir: '/usr/local/src'
   bin_dir: '/usr/local/bin'
 
-
+hostname:
+  sethostname: 'www.example.com'
 
 ssh:
   port: '{{ ssh_port }}'
