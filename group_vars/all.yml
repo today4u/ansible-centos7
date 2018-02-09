@@ -33,6 +33,10 @@ git:
 hostname:
   sethostname: 'www.example.com'
 
+logwatch:
+  mailto: 'logwatch@example.com'
+  detail: 'High'
+
 ssh:
   port: '{{ ssh_port }}'
 

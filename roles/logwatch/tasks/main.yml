@@ -1,0 +1,24 @@
+---
+# logwatch
+- name: logwatch インストール
+  yum: name=logwatch state=latest
+
+- name: logwatch.confバックアップ存在確認
+  stat: path="/usr/share/logwatch/default.conf/logwatch.conf.original"
+  register: result
+
+- name: logwatch.confバックアップ
+  command: 'cp -p /usr/share/logwatch/default.conf/logwatch.conf /usr/share/logwatch/default.conf/logwatch.conf.original'
+  when: result.stat.exists == false
+
+- name: logwatch.conf編集
+  lineinfile:
+    dest: /usr/share/logwatch/default.conf/logwatch.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^MailTo = '
+      line: 'MailTo = {{ logwatch.mailto }}'
+    - regexp: '^Detail = '
+      line: 'Detail = {{ logwatch.detail }}'
