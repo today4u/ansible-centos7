@@ -1,0 +1,20 @@
+---
+- name: 設定ファイルの存在チェック
+  stat: path="/etc/gai.conf"
+  register: result
+
+- name: gai.conf設置
+  command: 'cp -p /usr/share/doc/glibc-common-2.17/gai.conf /etc/gai.conf'
+  when: result.stat.exists == false
+
+- name: "gai.conf 編集"
+  lineinfile:
+    dest: /etc/gai.conf
+    state: present
+    regexp: '^#?\s*precedence ::ffff:0:0/96  100'
+    line: 'precedence ::ffff:0:0/96  100'
+
+# gai.conf変更後はマシンリブートが必要
+
+
+
