@@ -1,0 +1,10 @@
+---
+- name: "cronie-anacron 削除"
+  yum: name=cronie-anacron state=absent
+
+- name: "cronie-noanacron インストール"
+  yum: name=cronie-noanacron state=present
+
+- name: "起動&自動起動"
+  service: name=crond state=started
+
