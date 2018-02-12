@@ -33,6 +33,12 @@ git:
 hostname:
   sethostname: 'www.example.com'
 
+letsencrypt:
+  certbot_path: '/usr/bin/certbot-auto'
+  certificates:
+    - { document_root: '/var/www/example.com/public/', domains: 'example.com,www.example.com', email: 'postmaster@example.com'}
+    - { document_root: '/var/www/example.net/'       , domains: 'example.net,www.example.net', email: 'postmaster@example.net'}
+
 logwatch:
   mailto: 'logwatch@example.com'
   detail: 'High'

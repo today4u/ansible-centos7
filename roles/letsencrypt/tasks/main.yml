@@ -1,0 +1,28 @@
+---
+- name: certbot確認
+  stat: 
+    path: '{{ letsencrypt.certbot_path }}'
+  register: result
+
+- name: certbotインストール
+  get_url: 
+    url: 'https://dl.eff.org/certbot-auto'
+    dest: '{{ letsencrypt.certbot_path }}'
+  when: result.stat.exists == false
+
+- name: パーミッション変更
+  file:
+    path: '{{ letsencrypt.certbot_path }}'
+    # owner: root
+    # group: root
+    mode: 0700
+
+- name: 証明書の取得
+  command: 'certbot-auto certonly --webroot  -w {{ item.document_root }} -d {{ item.domains }} --email {{ item.email }} --agree-tos --keep-until-expiring --non-interactive'
+  with_items: '{{ letsencrypt.certificates }}'
+  register: result
+
+- name: result
+  debug: var=result
+
+
