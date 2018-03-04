@@ -1,0 +1,292 @@
+---
+# postfix
+- name: postfixインストール
+  yum:
+    name: postfix
+    state: present
+
+- name: cyrus-sasl-plain インストール
+  yum:
+    name: cyrus-sasl-plain
+    state: present
+
+- name: main.cfバックアップ存在確認
+  stat: path="/etc/postfix/main.cf.original"
+  register: result
+
+- name: main.cfバックアップ
+  command: 'cp -p /etc/postfix/main.cf /etc/postfix/main.cf.original'
+  when: result.stat.exists == false
+
+- name: main.cf編集
+  lineinfile:
+    dest: /etc/postfix/main.cf
+    state: present
+#    backup: yes
+    regexp: '{{ item.regexp }}'
+    insertafter: '{{ item.insertafter }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^myhostname'
+      insertafter: '^#?myhostname'
+      line: 'myhostname = localhost'
+
+    - regexp: '^mydomain'
+      insertafter: '^#?mydomain'
+      line: 'mydomain = localhost'
+
+    - regexp: '^myorigin'
+      insertafter: '^#?myorigin'
+      line: 'myorigin = $mydomain'
+
+    - regexp: '^alias_maps'
+      insertafter: '^#alias_maps'
+      line: 'alias_maps = hash:{{ mailserver.aliases }}'
+
+    - regexp: '^alias_database'
+      insertafter: '^#alias_database'
+      line: 'alias_database = hash:{{ mailserver.aliases }}'
+
+    - regexp: '^home_mailbox'
+      insertafter: '^#home_mailbox'
+      line: 'home_mailbox = Maildir/'
+
+    - regexp: '^smtpd_banner'
+      insertafter: '^#smtpd_banner'
+      line: 'smtpd_banner = $myhostname ESMTP unknown'
+
+    - regexp: '^inet_interfaces'
+      insertafter: '^#inet_interfaces'
+      line: 'inet_interfaces = all'
+
+    - regexp: '^mydestination'
+      insertafter: '^#mydestination'
+      line: 'mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain'
+
+    # SMTP-Auth Settings Section
+    - regexp: '^#\s*SMTP-Auth Settings'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: '# SMTP-Auth Settings'
+
+    - regexp: '^disable_vrfy_command'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'disable_vrfy_command = yes'
+
+    - regexp: '^smtpd_sasl_auth_enable'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'smtpd_sasl_auth_enable = yes'
+
+    - regexp: '^broken_sasl_auth_clients'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'broken_sasl_auth_clients = yes'
+
+    - regexp: '^smtpd_sasl_security_options'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'smtpd_sasl_security_options = noanonymous'
+
+    - regexp: '^smtpd_sasl_local_domain'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'smtpd_sasl_local_domain = $myhostname'
+
+    - regexp: '^smtpd_sender_restrictions'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'smtpd_sender_restrictions = reject_unknown_sender_domain'
+
+    - regexp: '^smtpd_client_restrictions'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'smtpd_client_restrictions = permit_mynetworks,reject_unknown_client,permit'
+
+    - regexp: '^smtpd_recipient_restrictions'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'smtpd_recipient_restrictions = permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination'
+
+    - regexp: '^message_size_limit'
+      insertafter: '^#\s*SMTP-Auth Settings'
+      line: 'message_size_limit = 10485760'
+
+    # TLS 
+    - regexp: '^#\sTLS'
+      insertafter: '^#\sTLS'
+      line: '# TLS'
+
+#    - regexp: '^smtpd_tls_cert_file'
+#      insertafter: '^#\sTLS'
+#      line: 'smtpd_tls_cert_file = {{ mailserver.tls.smtpd_tls_cert_file }}'
+#
+#    - regexp: '^smtpd_tls_key_file'
+#      insertafter: '^#\sTLS'
+#      line: 'smtpd_tls_key_file  = {{ mailserver.tls.smtpd_tls_key_file }}'
+#
+#    - regexp: '^smtpd_use_tls'
+#      insertafter: '^#\sTLS'
+#      line: 'smtpd_use_tls = {{ mailserver.tls.smtpd_use_tls }}'
+
+    # Virtual MailBox
+    - regexp: '^#\sVirtual MailBox'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: '# Virtual MailBox'
+
+    - regexp: '^virtual_mailbox_domains'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_mailbox_domains = {{ mailserver.virtual.mailbox_domains }}'
+
+    - regexp: '^virtual_mailbox_base'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_mailbox_base    = {{ mailserver.virtual.mailbox_base }}'
+
+    - regexp: '^virtual_mailbox_maps'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_mailbox_maps    = hash:{{ mailserver.virtual.mailbox_maps }}'
+
+    - regexp: '^virtual_alias_maps'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_alias_maps      = hash:{{ mailserver.virtual.alias_maps }}'
+
+    - regexp: '^virtual_minimum_uid'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_minimum_uid     = {{ mailserver.virtual.minimum_uid }}'
+
+    - regexp: '^virtual_uid_maps'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_uid_maps        = static:{{ mailserver.virtual.user.uid }}'
+
+    - regexp: '^virtual_gid_maps'
+      insertafter: '^#\sVirtual\sMailBox'
+      line: 'virtual_gid_maps        = static:{{ mailserver.virtual.user.gid }}'
+  notify: postfix restart
+
+
+- name: vmailグループ作成
+  group: 
+    name: '{{ mailserver.virtual.user.name}}'
+    gid: '{{ mailserver.virtual.user.gid }}'
+
+- name: vmailユーザー追加
+  user: 
+    name: '{{ mailserver.virtual.user.name }}'
+    state: present
+    shell: '{{ mailserver.virtual.user.shell }}'
+    uid: '{{ mailserver.virtual.user.uid }}'
+    group: '{{ mailserver.virtual.user.name }}'
+    system: yes
+
+- name: 'virtual_mailbox_base のディレクトリ設置'
+  file:
+    path: '{{ mailserver.virtual.mailbox_base }}'
+    state: directory 
+    owner:  '{{ mailserver.virtual.user.name }}'
+    group:  '{{ mailserver.virtual.user.name }}'
+    mode: 0755
+
+
+- name: virtual_mailbox_domains存在確認
+  stat: 
+    path: '{{ mailserver.virtual.mailbox_domains }}'
+  register: result
+- name: 'virtual_mailbox_domains のファイル設置'
+  file: 
+    path: '{{ mailserver.virtual.mailbox_domains }}'
+    state: touch
+  when: result.stat.exists == false
+
+- name: 'aliase_maps(database)の存在確認'
+  stat: 
+    path: '{{ mailserver.aliases }}'
+  register: result
+- name: 'aliase_maps(database)のファイル設置'
+  file:
+    path: '{{ mailserver.aliases }}'
+    state: touch
+  when: result.stat.exists == false
+
+- name: 'virtual_mailbox_maps の存在確認'
+  stat: 
+    path: '{{ mailserver.virtual.mailbox_maps }}'
+  register: result
+- name: 'virtual_mailbox_maps のファイル設置'
+  file:
+    path: '{{ mailserver.virtual.mailbox_maps }}'
+    state: touch
+  when: result.stat.exists == false
+
+- name: 'virtual_alias_mapsの存在確認'
+  stat: 
+    path: '{{ mailserver.virtual.alias_maps }}'
+  register: result
+- name: 'virtual_alias_maps のファイル設置'
+  file:
+    path: '{{ mailserver.virtual.alias_maps }}'
+    state: touch
+  when: result.stat.exists == false
+
+- name: master.cfバックアップ存在確認
+  stat: path="/etc/postfix/master.cf.original"
+  register: result
+- name: master.cfバックアップ
+  command: 'cp -p /etc/postfix/master.cf /etc/postfix/master.cf.original'
+  when: result.stat.exists == false
+
+# 同一の行があるので、注意(postfixのcfファイルは途中からのコメントはできないので行頭のスペースの数などで切り分けするしかない？)
+# 今回は先頭のスペースの数でmatchさせる（もともとあるコメントにはmatchさせない）ので同一内容の行を差し込む場合は先頭のスペースの数を3個以外で対応する
+- name: 'master.cf編集'
+  lineinfile:
+    dest: /etc/postfix/master.cf
+    state: present
+    regexp: '{{ item.regexp }}'
+    insertafter: '{{ item.insertafter }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^#?submission inet n       -       n       -       -       smtpd'
+      insertafter: '^#submission'
+      line: 'submission inet n       -       n       -       -       smtpd'
+
+    # - regexp: '^\s{3}-o smtpd_tls_security_level=encrypt' # tls を使う場合uncomment    # 先頭にスペース3個かつ文字列match
+    #   insertafter: '^#submission'
+    #   line: '   -o smtpd_tls_security_level=encrypt'       # tls を使う場合uncomment   # 先頭に↑regexpで指定した個数のスペースを置く
+
+    - regexp: '^\s{3}-o smtpd_sasl_auth_enable=yes' # 先頭にスペース3個かつ文字列match
+      insertafter: '^#?submission'
+      line: '   -o smtpd_sasl_auth_enable=yes'      # 先頭に↑regexpで指定した個数のスペースを置く
+
+    - regexp: '\s{3}-o smtpd_client_restrictions'                              # 先頭にスペース3個かつ文字列match
+      insertafter: '^#?submission'
+      line: '   -o smtpd_client_restrictions=permit_sasl_authenticated,reject' # 先頭に↑regexpで指定した個数のスペースを置く
+
+- name: 'smtpd.confバックアップ存在確認'
+  stat: path="/etc/sasl2/smtpd.conf.original"
+  register: result
+- name: 'smtpd.confバックアップ'
+  command: 'cp -p /etc/sasl2/smtpd.conf /etc/sasl2/smtpd.conf.original'
+  when: result.stat.exists == false
+
+- name: 'smtpd.conf編集'
+  lineinfile:
+    dest: /etc/sasl2/smtpd.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: 'pwcheck_method'
+      line: 'pwcheck_method: auxprop'
+    - regexp: 'auxprop_plugin'
+      line: 'auxprop_plugin: sasldb'
+    - regexp: 'mech_list'
+      line: 'mech_list: plain login'
+
+
+- name: postfix起動・自動起動
+  service:
+    name: postfix
+    state: started
+    enabled: yes
+
+- name: cyrus-saslインストール
+  yum:
+    name: cyrus-sasl
+    state: present
+
+- name: saslauthd起動・自動起動
+  service:
+    name: saslauthd
+    state: started
+    enabled: yes
