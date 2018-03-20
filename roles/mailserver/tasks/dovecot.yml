@@ -1,0 +1,172 @@
+---
+- name: dovecotインストール
+  yum:
+    name: dovecot
+    state: present
+
+- name: dovecot.confバックアップ存在確認
+  stat: path="/etc/dovecot/dovecot.conf.original"
+  register: result
+
+- name: dovecot.confバックアップ
+  command: 'cp -p /etc/dovecot/dovecot.conf /etc/dovecot/dovecot.conf.original'
+  when: result.stat.exists == false
+
+- name: dovecot.conf編集
+  lineinfile:
+    dest: /etc/dovecot/dovecot.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^#?protocols = imap pop3 lmtp'
+      line: 'protocols = imap pop3 lmtp'
+
+
+- name: 10-mail.confバックアップ存在確認
+  stat: path="/etc/dovecot/conf.d/10-mail.conf.original"
+  register: result
+
+- name: 10-mail.confバックアップ
+  command: 'cp -p /etc/dovecot/conf.d/10-mail.conf /etc/dovecot/conf.d/10-mail.conf.original'
+  when: result.stat.exists == false
+
+- name: 10-mail.conf編集
+  lineinfile:
+    dest: /etc/dovecot/conf.d/10-mail.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^#?mail_location = '
+      line: 'mail_location = maildir:{{ mailserver.virtual.mailbox_base }}/%d/%n/Maildir'
+    - regexp: '^#?valid_chroot_dirs = '
+      line: 'valid_chroot_dirs = /home'
+
+- name: 10-ssl.confバックアップ存在確認
+  stat: path="/etc/dovecot/conf.d/10-ssl.conf.original"
+  register: result
+
+- name: 10-ssl.confバックアップ
+  command: 'cp -p /etc/dovecot/conf.d/10-ssl.conf /etc/dovecot/conf.d/10-ssl.conf.original'
+  when: result.stat.exists == false
+
+- name: 10-ssl.conf編集
+  lineinfile:
+    dest: /etc/dovecot/conf.d/10-ssl.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^ssl = '
+      line: 'ssl = yes'
+
+- name: 10-auth.confバックアップ存在確認
+  stat: path="/etc/dovecot/conf.d/10-auth.conf.original"
+  register: result
+
+- name: 10-auth.confバックアップ
+  command: 'cp -p /etc/dovecot/conf.d/10-auth.conf /etc/dovecot/conf.d/10-auth.conf.original'
+  when: result.stat.exists == false
+
+- name: 10-auth.conf編集
+  lineinfile:
+    dest: /etc/dovecot/conf.d/10-auth.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^#?auth_mechanisms = '
+      line: 'auth_mechanisms = plain login'
+    - regexp: '^#?!include auth-system.conf.ext'
+      line: '#!include auth-system.conf.ext'
+    - regexp: '^#?!include auth-passwdfile.conf.ext'
+      line: '!include auth-passwdfile.conf.ext'
+
+- name: auth-passwdfile.conf.extバックアップ存在確認
+  stat: path="/etc/dovecot/conf.d/auth-passwdfile.conf.ext.original"
+  register: result
+
+- name: auth-passwdfile.conf.extバックアップ
+  command: 'cp -p /etc/dovecot/conf.d/auth-passwdfile.conf.ext /etc/dovecot/conf.d/auth-passwdfile.conf.ext.original'
+  when: result.stat.exists == false
+
+- name: auth-passwdfile.conf.ext編集(初期設定コメント化)
+  lineinfile:
+    dest: /etc/dovecot/conf.d/auth-passwdfile.conf.ext
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '#?args = scheme=CRYPT username_format=%u /etc/dovecot/users'
+      line: '  #args = scheme=CRYPT username_format=%u /etc/dovecot/users'
+    - regexp: '#?args = username_format=%u /etc/dovecot/users'
+      line: '  #args = username_format=%u /etc/dovecot/users'
+- name: auth-passwdfile.conf.ext編集(追記)
+  lineinfile:
+    dest: /etc/dovecot/conf.d/auth-passwdfile.conf.ext
+    state: present
+    regexp: '{{ item.regexp }}'
+    insertafter: '{{ item.insertafter }}'
+    line: '{{ item.line }}'
+  with_items: #同一内容の行をそれぞれ違う場所に差し込むため、行頭のスペースで違いを作る
+    - regexp: '^\s{2}args = {{ mailserver.dovecot.auth_passwdfile }}'
+      insertafter: '  #args = scheme=CRYPT username_format=%u /etc/dovecot/users'
+      line: '  args = {{ mailserver.dovecot.auth_passwdfile }}' 
+    - regexp: '^\s{3}args = {{ mailserver.dovecot.auth_passwdfile }}'
+      insertafter: '  #args = username_format=%u /etc/dovecot/users'
+      line: '   args = {{ mailserver.dovecot.auth_passwdfile }}'
+
+- name: 10-master.confバックアップ存在確認
+  stat: path="/etc/dovecot/conf.d/10-master.conf.original"
+  register: result
+
+- name: 10-master.confバックアップ
+  command: 'cp -p /etc/dovecot/conf.d/10-master.conf /etc/dovecot/conf.d/10-master.conf.original'
+  when: result.stat.exists == false
+
+- name: 10-master.conf 編集
+  lineinfile:
+    dest: /etc/dovecot/conf.d/10-master.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items: #同一内容の行をそれぞれ違う場所に差し込むため、行頭のスペースで違いを作る
+    - regexp: '^\s*#?port = 110'
+      line: '    port = 110'
+    - regexp: '^\s*#?port = 995'
+      line: '    port = 995'
+    - regexp: '^\s*#?port = 143'
+      line: '    port = 143'
+    - regexp: '^\s*#?port = 993'
+      line: '    port = 993'
+- name: 10-master.conf 編集(ssl = yes)
+  lineinfile:
+    dest: /etc/dovecot/conf.d/10-master.conf
+    state: present
+    regexp: '{{ item.regexp }}'
+    insertafter: '{{ item.insertafter }}'
+    line: '{{ item.line }}'
+  with_items: #同一内容の行をそれぞれ違う場所に差し込むため、行頭のスペースで違いを作る
+    - regexp: '^\s*ssl = yes #imaps'
+      insertafter: 'port = 993'
+      line: '    ssl = yes #imaps'
+    - regexp: '^\s*ssl = yes #pop3s'
+      insertafter: 'port = 995'
+      line: '    ssl = yes #pop3s'
+
+- name: auth-passwdfile存在確認
+  stat: 
+    path: '{{ mailserver.dovecot.auth_passwdfile }}'
+  register: result
+- name: auth-passwdfile作成
+  file:
+    path: '{{ mailserver.dovecot.auth_passwdfile }}'
+    state: touch
+  when: result.stat.exists == false
+
+- name: dovecot起動・自動起動
+  service:
+    name: dovecot
+    state: started
+    enabled: yes
