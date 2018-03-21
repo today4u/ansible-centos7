@@ -1,0 +1,59 @@
+---
+- name: 'virtual_mailbox_domains にドメイン追記'
+  lineinfile:
+    dest: '{{ mailserver.virtual.mailbox_domains }}'
+    state: present
+    line: '{{ item.domain }}'
+  with_items: '{{ mailserver.mailaccount }}'
+
+- name: 'virtual_mailbox_maps へのメールアドレス追記'
+  lineinfile:
+    dest: '{{ mailserver.virtual.mailbox_maps }}'
+    state: present
+    line: '{{ item[1].localpart }}@{{ item[0].domain }}  {{ item[0].domain }}/{{ item[1].localpart }}/Maildir/'
+  with_subelements:
+    - '{{ mailserver.mailaccount }}'
+    - account
+  notify: postmap mailbox_map
+
+- name: 'add sasldb2'
+  expect:
+    command: "saslpasswd2 -u {{ item[0].domain}} {{item[1].localpart}}"
+    responses:
+      'Password': '{{item[1].password}}'
+      'Again': '{{item[1].password}}'
+    timeout: 10
+    echo: yes
+  with_subelements:
+    - '{{ mailserver.mailaccount }}'
+    - account
+  register: result
+
+- name: sasldb2をpostfix管理に
+  file:
+    path: '/etc/sasldb2'
+    state: file
+    owner:  'postfix'
+    group:  'postfix'
+    mode: 0755
+
+- name: dovecot pw 
+  expect:
+    command: "doveadm pw"
+    responses:
+      'Enter new password': '{{item[1].password}}'
+      'Retype new password': '{{item[1].password}}'
+    timeout: 10
+  with_subelements:
+    - '{{ mailserver.mailaccount }}'
+    - account
+  register: result
+
+- name: auth_passwdfile
+  lineinfile:
+    dest: '{{ mailserver.dovecot.auth_passwdfile }}'
+    state: present
+    line: '{{ item.item[1].localpart }}@{{ item.item[0].domain }}:{{ item.stdout_lines[2] }}:{{ mailserver.virtual.user.uid }}:{{ mailserver.virtual.user.gid }}'
+  with_items: '{{ result.results }}'
+  notify: mailserver restart
+
