@@ -1,0 +1,18 @@
+---
+- name: virtual_alias_maps追記
+  lineinfile:
+    dest: '{{ mailserver.virtual.alias_maps }}'
+    state: present
+    line: '{{ item.mailaccount }} {{ item.alias }}'
+  with_items: '{{ mailserver.mailtransfer }}'
+  notify: postmap virtual_alias_maps
+
+- name: virtual_alias_maps追記
+  lineinfile:
+    dest: '{{ mailserver.aliases }}'
+    state: present
+    line: '{{ item.alias }}: {{ item.transfer }}'
+  with_items: '{{ mailserver.mailtransfer }}'
+  notify: newaliases
+
+
