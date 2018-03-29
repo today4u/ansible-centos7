@@ -1,0 +1,30 @@
+---
+- name: postfix restart
+  service:
+    name: postfix
+    state: restarted
+
+- name: dovecot restart
+  service:
+    name: dovecot
+    state: restarted
+
+- name: postmap mailbox_map
+  command: 'postmap hash:/etc/postfix/vmailbox'
+  #notify: postfix restart
+
+- name: postmap virtual_alias_maps
+  command: 'postmap hash:/etc/postfix/vmailbox_alias'
+  #notify: postfix restart
+
+- name: newaliases
+  command: 'newaliases'
+  #nofify: postfix restart
+
+- name: mailserver restart
+  service: 
+    name: '{{ item }}' 
+    state: restarted
+  with_items:
+    - postfix
+    - dovecot
