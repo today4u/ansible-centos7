@@ -1,0 +1,12 @@
+---
+- name: postfixインストール・設定
+  include: postfix.yml
+
+- name: dovecotインストール・設定
+  include: dovecot.yml
+
+- name: メールアカウント登録
+  include: mailaccount.yml
+
+- name: メール転送設定
+  include: mailtransfer.yml
