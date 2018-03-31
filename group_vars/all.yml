@@ -43,6 +43,42 @@ logwatch:
   mailto: 'logwatch@example.com'
   detail: 'High'
 
+
+mailserver:
+  aliases: '/etc/postfix/aliases'
+  virtual:
+    mailbox_domains: '/var/spool/vmail'
+    mailbox_base: '/var/spool/mail/vhosts'
+    mailbox_maps: '/etc/postfix/vmailbox'
+    alias_maps: '/etc/postfix/vmailbox_alias'
+    minimum_uid: 100
+    user:
+      name: 'vmail'
+      shell: '/bin/false'
+      uid: '5001'
+      gid: '5001'
+  tls:
+    smtpd_tls_cert_file: '/etc/pki/tls/certs/mailserver.crt'
+    smtpd_tls_key_file: '/etc/pki/tls/certs/mailserver.key'
+    smtpd_use_tls: yes
+  dovecot:
+    auth_passwdfile: '/etc/dovecot/passwd'
+  mailaccount:
+    - domain: 'example.com'
+      account:
+        - { localpart: 'postmaster', password: 'postmaster password' }
+        - { localpart: 'test',       password: 'test password' }
+        - { localpart: 'info',       password: 'info password' }
+
+    - domain: 'example.net'
+      account:
+        - { localpart: 'postmaster', password: 'postmaster password' }
+        - { localpart: 'test',       password: 'test password' }
+        - { localpart: 'info',       password: 'info password' }
+  mailtransfer:
+    - { mailaccount: 'test@example.com', alias: 'test+example.com', transfer: 'postmaster@example.com, info@example.com'}
+    - { mailaccount: 'test@example.net', alias: 'test+example.net', transfer: '"| /usr/bin/php  /path/to/mail.php"' }
+
 ssh:
   port: '{{ ssh_port }}'
 
