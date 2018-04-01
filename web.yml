@@ -8,5 +8,5 @@
     - php 
     - git 
     - python
-#    - mailserver
-#    - cron
+    - cron
+
