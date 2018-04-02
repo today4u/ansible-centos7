@@ -82,3 +82,9 @@ mailserver:
 ssh:
   port: '{{ ssh_port }}'
 
+user:
+  - { name: alice, password: "Alice's password", groups: '',          key: 'https://github.com/today4u.keys' }      # publicKey in github 
+  - { name: bob,   password: "Bob's password",   groups: 'alice',     key: '{{ lookup("file","bob.pub") }}' }  # publicKey in  roles/users/files/bob.pub
+#  - { name: carol, password: "Carol's password", groups: 'alice,bob', key: '{{ lookup("file","/home/carol/.ssh/id_rsa.pub") }}' } #belong to the group of Alice and Bob
+
+
