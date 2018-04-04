@@ -1,0 +1,62 @@
+---
+- name: sftp group 追加
+  group:
+    name: '{{ sftp.group.name }}'
+    gid: '{{ sftp.group.gid }}'
+
+- name: sftpユーザー用グループ追加
+  group:
+     name: '{{ sftp.group.name }}'
+     gid: '{{ sftp.group.gid }}'
+  when: sftp.users
+
+- name: sftpユーザー追加
+  user:
+     name: '{{ item.name }}'
+     uid: '{{ item.uid }}'
+     group: '{{ item.name }}'
+     groups: '{{ sftp.group.name }}'
+     password: '{{ item.password |password_hash("sha512") }}'
+     state: present
+  with_items: '{{ sftp.users }}'
+  when: sftp.users
+
+- name: 鍵設置
+  authorized_key:
+     user: '{{ item.name }}'
+     state: present
+     key: '{{ item.key }}'
+  with_items: '{{ sftp.users }}'
+
+- name: chroot
+  blockinfile:
+    path: /etc/ssh/sshd_config 
+    block: |
+      Match group sftponly
+        ChrootDirectory /home/%u
+        X11Forwarding no
+        AllowTcpForwarding no
+        ForceCommand internal-sftp
+
+- name: sftp用ユーザーのホームディレクトリの権限変更
+  file:
+    state: directory
+    path: '/home/{{ item.name }}'
+    owner: root
+    group: root
+    mode: 0755
+  with_items: '{{ sftp.users }}'
+
+- name: sftpユーザー用ディレクトリ作成uploadfiles
+  file:
+    state: directory
+    path: '/home/{{ item.name }}/uploadfiles'
+    owner: '{{ item.name }}'
+    group: '{{ item.name }}'
+    mode: 0755
+  with_items: '{{ sftp.users }}'
+
+- name: restart sshd
+  service:
+    name: sshd
+    state: restarted

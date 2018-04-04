@@ -79,6 +79,13 @@ mailserver:
     - { mailaccount: 'test@example.com', alias: 'test+example.com', transfer: 'postmaster@example.com, info@example.com'}
     - { mailaccount: 'test@example.net', alias: 'test+example.net', transfer: '"| /usr/bin/php  /path/to/mail.php"' }
 
+sftp:
+  group:
+    name: 'sftponly'
+    gid: 2000
+  users:
+    - {name: 'sftpuser', uid: 2001, gid: 2001, password: 'sftpuser pasuword', key: 'https://github.com/today4u.keys'}
+
 ssh:
   port: '{{ ssh_port }}'
 
